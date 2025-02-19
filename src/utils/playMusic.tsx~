@@ -1,0 +1,121 @@
+const audioObj = {} as any
+import {useMusicStore} from '@/stores/music'
+
+// 播放音乐
+export function playMusic(url: string, {loop, clickSoundSwitch}: any) {
+  const musicStore = useMusicStore()
+  const audioElement = audioObj[url] ? audioObj[url] : new Audio(url)
+  audioElement.currentTime = 0 // 从0秒开始播放
+  audioElement.loop = loop // 是否循环播放
+  audioElement.muuted = true
+  const playMusicFn = () => {
+    const promise = audioElement && audioElement.play()
+    if (promise !== undefined) {
+      promise.then(() => {
+        // Autoplay started!
+      }).catch(() => {
+        // Autoplay was prevented
+        const handler = {
+          playMusicHandler() {
+            audioElement && audioElement.play()
+            window.removeEventListener('click', handler.playMusicHandler)
+          }
+        }
+        window.addEventListener('click', handler.playMusicHandler)
+      })
+    }
+  }
+  // 播放音频
+  if (clickSoundSwitch !== 'off') {
+    playMusicFn()
+    audioElement.addEventListener('loadeddata', playMusicFn)
+  }
+  // 切换至后台暂停播放
+  // 出于兼容性原因，请确保使用 document.addEventListener 而不是 window.addEventListener 来注册回调。Safari <14.0 仅支持前者。
+  document.addEventListener('visibilitychange', function () {
+    if (musicStore.clickSoundSwitch === 'off') {
+      setTimeout(()=>{
+        audioElement.pause()
+      }, 500)
+      return
+    }
+    if (document.visibilityState === 'visible') {
+      if (audioElement.loop || (audioElement.currentTime < audioElement.duration)) {
+        if (audioElement.src.includes('bg')) {
+          musicStore.mainBgMusicPlayStatus ? audioElement.play() : audioElement.pause()
+          return
+        }
+        audioElement.play()
+      }
+    } else {
+      audioElement.pause()
+    }
+  })
+  // 当 visibleStateState 属性的值转换为 hidden 时，Safari 不会按预期触发 visibilitychange；因此，在这种情况下，你还需要包含代码以侦听 pagehide 事件。
+  window.addEventListener('pagehide', function () {
+    audioElement.pause()
+  })
+  // 存储至audioObj
+  audioObj[url] = audioElement
+  return audioElement
+}
+
+// 播放音频
+export function playSoundMusic(url: string, {loop, clickSoundSwitch}: any) {
+  const musicStore = useMusicStore()
+  const audioElement = audioObj[url] ? audioObj[url] : new Audio(url)
+  audioElement.currentTime = 0 // 从0秒开始播放
+  audioElement.loop = loop // 是否循环播放
+  const playMusicFn = () => {
+    const promise = audioElement && audioElement.play()
+    if (promise !== undefined) {
+      promise.then(() => {
+        // Autoplay started!
+      }).catch(() => {
+        // Autoplay was prevented
+        const handler = {
+          playMusicHandler() {
+            audioElement && audioElement.play()
+            window.removeEventListener('click', handler.playMusicHandler)
+          }
+        }
+        window.addEventListener('click', handler.playMusicHandler)
+      })
+    }
+  }
+  // 播放音频
+  if (clickSoundSwitch !== 'off') {
+    playMusicFn()
+    audioElement.addEventListener('loadeddata', playMusicFn)
+  }
+  // 切换至后台暂停播放
+  // 出于兼容性原因，请确保使用 document.addEventListener 而不是 window.addEventListener 来注册回调。Safari <14.0 仅支持前者。
+  document.addEventListener('visibilitychange', function () {
+    if (musicStore.clickSoundSwitch === 'off') {
+      audioElement.pause()
+      return
+    }
+    if (document.visibilityState === 'visible') {
+      if (audioElement.currentTime < audioElement.duration) {
+        audioElement.play()
+      }
+    } else {
+      audioElement.pause()
+    }
+  })
+  // 当 visibleStateState 属性的值转换为 hidden 时，Safari 不会按预期触发 visibilitychange；因此，在这种情况下，你还需要包含代码以侦听 pagehide 事件。
+  window.addEventListener('pagehide', function () {
+    audioElement.pause()
+  })
+  // 存储至audioObj
+  audioObj[url] = audioElement
+  return audioElement
+}
+// 暂停音频
+export function pauseMusic(url: string) {
+  const audioElement = audioObj[url]
+  if (audioElement) {
+    audioElement.pause()
+  }
+  return audioElement
+}
